@@ -1,0 +1,31 @@
+{
+    "name": "nopost/thinkphp-addons-core",
+    "description": "Thinkphp addons core",
+    "keywords": ["thinkphp", "plugin", "addons"],
+    "type": "library",
+    "license": "Apache-2.0",
+    "version": "0.0.1",
+    "authors": [{
+        "name": "nopost",
+        "email": "nopost@qq.com",
+        "homepage": "https://www.nopost.cn"
+    }],
+    "homepage": "https://github.com/nopost/thinkphp-addons-core",
+    "autoload": {
+        "psr-4": {
+            "think\\": "src/"
+        },
+        "files": [
+            "src/helper.php"
+        ]
+    },
+    "support": {
+        "issues": "https://github.com/nopost/thinkphp-addons-core/issues"
+    },
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "require-dev": {
+        "php": ">=5.4.0"
+    }
+}
