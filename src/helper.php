@@ -1,5 +1,6 @@
 <?php
 
+use think\facade\Env;
 use think\facade\App;
 use think\facade\Cache;
 use think\facade\Config;
@@ -9,7 +10,7 @@ use think\Loader;
 use think\facade\Route;
 
 // 插件目录
-define('ADDON_PATH', \think\facade\Env::get('root_path') . 'addons' . DS);
+define('ADDON_PATH', Env::get('root_path') . 'addons' . DIRECTORY_SEPARATOR);
 
 // 定义路由
 Route::any('addons/:addon/[:controller]/[:action]', "\\think\\addons\\Route@execute");
@@ -47,23 +48,26 @@ Hook::add('app_init', function () {
     $domains = [];
     $rules = [];
     $execute = "\\think\\addons\\Route@execute?addon=%s&controller=%s&action=%s";
-    foreach ($routeArr as $k => $v) {
-        if (is_array($v)) {
-            $addon = $v['addon'];
-            $domain = $v['domain'];
-            $drules = [];
-            foreach ($v['rule'] as $m => $n) {
-                list($addon, $controller, $action) = explode('/', $n);
-                $drules[$m] = sprintf($execute . '&indomain=1', $addon, $controller, $action);
+    if ($routeArr) {
+        foreach ($routeArr as $k => $v) {
+            if (is_array($v)) {
+                $addon = $v['addon'];
+                $domain = $v['domain'];
+                $drules = [];
+                foreach ($v['rule'] as $m => $n) {
+                    list($addon, $controller, $action) = explode('/', $n);
+                    $drules[$m] = sprintf($execute . '&indomain=1', $addon, $controller, $action);
+                }
+                //$domains[$domain] = $drules ? $drules : "\\addons\\{$k}\\controller";
+                $domains[$domain] = $drules ? $drules : [];
+                $domains[$domain][':controller/[:action]'] = sprintf($execute . '&indomain=1', $addon, ":controller", ":action");
+            } else {
+                if (!$v) {
+                    continue;
+                }
+                list($addon, $controller, $action) = explode('/', $v);
+                $rules[$k] = sprintf($execute, $addon, $controller, $action);
             }
-            //$domains[$domain] = $drules ? $drules : "\\addons\\{$k}\\controller";
-            $domains[$domain] = $drules ? $drules : [];
-            $domains[$domain][':controller/[:action]'] = sprintf($execute . '&indomain=1', $addon, ":controller", ":action");
-        } else {
-            if (!$v)
-                continue;
-            list($addon, $controller, $action) = explode('/', $v);
-            $rules[$k] = sprintf($execute, $addon, $controller, $action);
         }
     }
     if($rules){
@@ -115,23 +119,25 @@ function get_addon_list() {
     $results = scandir(ADDON_PATH);
     $list = [];
     foreach ($results as $name) {
-        if ($name === '.' or $name === '..')
+        if ($name === '.' or $name === '..') {
             continue;
-        if (is_file(ADDON_PATH . $name))
+        }
+        if (is_file(ADDON_PATH . $name)) {
             continue;
-        $addonDir = ADDON_PATH . $name . DS;
-        if (!is_dir($addonDir))
+        }
+        $addonDir = ADDON_PATH . $name . DIRECTORY_SEPARATOR;
+        if (!is_dir($addonDir)) {
             continue;
-
-        if (!is_file($addonDir . ucfirst($name) . '.php'))
+        }
+        if (!is_file($addonDir . ucfirst($name) . '.php')) {
             continue;
-
+        }
         //这里不采用get_addon_info是因为会有缓存
         //$info = get_addon_info($name);
         $info_file = $addonDir . 'info.ini';
-        if (!is_file($info_file))
+        if (!is_file($info_file)) {
             continue;
-
+        }
         $info = Config::parse($info_file, '', "addon-info-{$name}");
         $info['url'] = addon_url($name);
         $list[$name] = $info;
@@ -141,10 +147,10 @@ function get_addon_list() {
 
 /**
  * 获得插件自动加载的配置
+ * @param boole $truncate 清空插件配置缓存
  * @return array
  */
-function get_addon_autoload_config($truncate = false)
-{
+function get_addon_autoload_config($truncate = false) {
     // 读取addons的配置
     $config = (array) Config::get('addons');
     if ($truncate) {
@@ -153,16 +159,15 @@ function get_addon_autoload_config($truncate = false)
     }
     $route = [];
     // 读取插件目录及钩子列表
-    $base = get_class_methods("\\think\\Addons");
-    $base = array_merge($base, ['install', 'uninstall', 'enable', 'disable']);
-
+    $base_addons = get_class_methods("\\think\\Addons");
+    $base = array_merge($base_addons, ['install', 'uninstall', 'enable', 'disable']);
     $url_domain_deploy = Config::get('url_domain_deploy');
     $addons = get_addon_list();
     $domain = [];
     foreach ($addons as $name => $addon) {
-        if (!$addon['state'])
+        if (!$addon['state']) {
             continue;
-
+        }
         // 读取出所有公共方法
         $methods = (array) get_class_methods("\\addons\\" . $name . "\\" . ucfirst($name));
         // 跟插件基类方法做比对，得到差异结果
@@ -237,10 +242,8 @@ function get_addon_class($name, $type = 'hook', $class = null) {
  * @param string $name 插件名
  * @return array
  */
-function get_addon_info($name)
-{
+function get_addon_info($name) {
     $addon = get_addon_instance($name);
-
     if (!$addon) {
         return [];
     }

@@ -2,7 +2,7 @@
 
 namespace think;
 
-use think\View;
+use think\Facade\View;
 use think\facade\Config;
 /**
  * 插件基类
@@ -34,7 +34,7 @@ abstract class Addons {
 
         // 初始化视图模型
         $config = ['view_path' => $this->addons_path];
-        $config = array_merge(Config::get('template.'), $config);
+        $config = array_merge(Config::pull('template'), $config);
         $this->view = new View($config, Config::get('view_replace_str'));
 
         // 控制器初始化
@@ -74,8 +74,8 @@ abstract class Addons {
     final public function getConfig($name = '') {
         if (empty($name)) {
             $name = $this->getName();
-        }
-        $config = Config::get($name, $this->configRange);
+        }    
+        Config::setDefaultPrefix($this->configRange)->get($name);
         if ($config) {
             return $config;
         }
@@ -87,8 +87,7 @@ abstract class Addons {
             }
             unset($temp_arr);
         }
-        Config::set($name, $config, $this->configRange);
-
+        Config::setDefaultPrefix($this->configRange)->set($name, $config);
         return $config;
     }
 
@@ -103,8 +102,8 @@ abstract class Addons {
             $name = $this->getName();
         }
         $config = $this->getConfig($name);
-        $config = array_merge($config, $value);
-        Config::set($name, $config, $this->configRange);
+        $config = array_merge($config, $value);        
+	Config::setDefaultPrefix($this->configRange)->set($name, $config);
         return $config;
     }
 
@@ -120,7 +119,8 @@ abstract class Addons {
         }
         $info = $this->getInfo($name);
         $info = array_merge($info, $value);
-        Config::set($name, $info, $this->infoRange);
+	Config::setDefaultPrefix($this->infoRange)->set($name, $info);
+      
         return $info;
     }
 

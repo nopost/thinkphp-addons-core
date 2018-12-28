@@ -43,7 +43,7 @@ class Route {
             }
 
             // 设置当前请求的控制器、操作
-            $request->controller($controller)->action($action);
+            $request->setController($controller)->setAction($action);
 
             // 监听addon_module_init
             Hook::listen('addon_module_init', $request);

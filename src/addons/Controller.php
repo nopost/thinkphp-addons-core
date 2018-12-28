@@ -3,11 +3,11 @@
 namespace think\addons;
 
 use app\common\library\Auth;
+use think\facade\Lang;
 use think\facade\Config;
-use think\Hook;
-use think\Lang;
-use think\Loader;
-use think\Request;
+use think\facade\Cookie;
+use think\facade\Loader;
+use think\facade\Request;
 
 /**
  * 插件基类控制器
@@ -51,10 +51,9 @@ class Controller extends \think\Controller {
      * @param Request $request Request对象
      * @access public
      */
-    public function __construct(Request $request = null) {
-        if (is_null($request)) {
-            $request = Request::instance();
-        }
+    public function __construct() {
+
+        $request = Request::instance();
         // 生成request对象
         $this->request = $request;
 
@@ -67,7 +66,7 @@ class Controller extends \think\Controller {
         $filter = $convert ? 'strtolower' : 'trim';
         // 处理路由参数
         $param = $this->request->param();
-        $dispatch = $this->request->dispatch();
+        $dispatch = (array) $this->request->dispatch();
         $var = isset($dispatch['var']) ? $dispatch['var'] : [];
         $var = array_merge($param, $var);
         if (isset($dispatch['method']) && substr($dispatch['method'][0], 0, 7) == "\\addons") {
@@ -89,7 +88,7 @@ class Controller extends \think\Controller {
         Config::set('template.view_path', ADDON_PATH . $this->addon . DS . 'view' . DS);
 
         // 父类的调用必须放在设置模板路径之后
-        parent::__construct($this->request);
+        parent::__construct();
     }
 
     protected function _initialize() {
@@ -104,11 +103,11 @@ class Controller extends \think\Controller {
 
         // 设置替换字符串
         $cdnurl = Config::get('site.cdnurl');
-        $this->view->replace('__ADDON__', $cdnurl . "/assets/addons/" . $this->addon);
+        // $this->view->replace('__ADDON__', $cdnurl . "/assets/addons/" . $this->addon);
 
         $this->auth = Auth::instance();
         // token
-        $token = $this->request->server('HTTP_TOKEN', $this->request->request('token', \think\Cookie::get('token')));
+        $token = $this->request->server('HTTP_TOKEN', $this->request->request('token', Cookie::get('token')));
 
         $path = 'addons/' . $this->addon . '/' . str_replace('.', '/', $this->controller) . '/' . $this->action;
         // 设置当前请求的URI
